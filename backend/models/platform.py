@@ -11,6 +11,7 @@ class Platform(BaseModel):
     igdb_id: int = Column(Integer())
     sgdb_id: int = Column(Integer())
     moby_id: int = Column(Integer())
+    tgdb_id: int = Column(Integer())
     slug: str = Column(String(length=50), nullable=False)
     fs_slug: str = Column(String(length=50), nullable=False)
     name: str = Column(String(length=400))
