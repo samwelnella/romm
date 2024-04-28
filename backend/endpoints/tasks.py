@@ -2,6 +2,7 @@ from decorators.auth import protected_route
 from endpoints.responses import MessageResponse
 from fastapi import APIRouter, Request
 from tasks.update_switch_titledb import update_switch_titledb_task
+from tasks.update_tgdb_database import update_tgdb_database_task
 
 router = APIRouter()
 
@@ -16,8 +17,8 @@ async def run_tasks(request: Request) -> MessageResponse:
         RunTasksResponse: Standard message response
     """
 
-    await update_mame_xml_task.run()
     await update_switch_titledb_task.run()
+    await update_tgdb_database_task.run()
     return {"msg": "All tasks ran successfully!"}
 
 
@@ -32,7 +33,8 @@ async def run_task(request: Request, task: str) -> MessageResponse:
     """
 
     tasks = {
-        "switch_titledb": update_switch_titledb_task 
+        "switch_titledb": update_switch_titledb_task ,
+        "tgdb_database": update_tgdb_database_task
     }
  
     await tasks[task].run()

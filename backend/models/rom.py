@@ -39,6 +39,7 @@ class Rom(BaseModel):
     summary: str = Column(Text)
     igdb_metadata: MySQLJSON = Column(MySQLJSON, default=dict)
     moby_metadata: MySQLJSON = Column(MySQLJSON, default=dict)
+    tgdb_metadata: MySQLJSON = Column(MySQLJSON, default=dict)
 
     path_cover_s: str = Column(Text, default="")
     path_cover_l: str = Column(Text, default="")

@@ -5,6 +5,8 @@ from config import (
     RESCAN_ON_FILESYSTEM_CHANGE_DELAY,
     SCHEDULED_RESCAN_CRON,
     SCHEDULED_UPDATE_SWITCH_TITLEDB_CRON,
+    ENABLE_SCHEDULED_UPDATE_TGDB_DATABASE,
+    SCHEDULED_UPDATE_TGDB_DATABASE_CRON,
 )
 from endpoints.responses.heartbeat import HeartbeatResponse
 from handler.metadata_handler.igdb_handler import IGDB_API_ENABLED
@@ -48,6 +50,12 @@ def heartbeat() -> HeartbeatResponse:
                 "CRON": SCHEDULED_UPDATE_SWITCH_TITLEDB_CRON,
                 "TITLE": "Scheduled Switch TitleDB update",
                 "MESSAGE": "Updates the Nintendo Switch TitleDB file",
+            },
+            "TGDB_DATABASE": {
+                "ENABLED": ENABLE_SCHEDULED_UPDATE_TGDB_DATABASE,
+                "CRON": SCHEDULED_UPDATE_TGDB_DATABASE_CRON,
+                "TITLE": "Scheduled TGDB database update",
+                "MESSAGE": "Updates the TGDB database file",
             },
         }
     }

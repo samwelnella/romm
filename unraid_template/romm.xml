@@ -51,4 +51,6 @@
    <Config Name="SCHEDULED_RESCAN_CRON" Target="SCHEDULED_RESCAN_CRON" Default="0 3 * * *" Mode="" Description="Cron expression for scheduled scan" Type="Variable" Display="advanced" Required="false" Mask="false"/>
    <Config Name="ENABLE_SCHEDULED_UPDATE_SWITCH_TITLEDB" Target="ENABLE_SCHEDULED_UPDATE_SWITCH_TITLEDB" Default="false" Mode="" Description="Update Switch TitleDB on a schedule" Type="Variable" Display="advanced" Required="false" Mask="false"/>
    <Config Name="SCHEDULED_UPDATE_SWITCH_TITLEDB_CRON" Target="SCHEDULED_UPDATE_SWITCH_TITLEDB_CRON" Default="0 4 * * *" Mode="" Description="Cron expression for scheduled Switch TitleDB update" Type="Variable" Display="advanced" Required="false" Mask="false"/>
+   <Config Name="ENABLE_SCHEDULED_UPDATE_TGDB_DATABASE" Target="ENABLE_SCHEDULED_UPDATE_TGDB_DATABASE" Default="false" Mode="" Description="Update TGDB database on a schedule" Type="Variable" Display="advanced" Required="false" Mask="false"/>
+   <Config Name="SCHEDULED_UPDATE_TGDB_DATABASE_CRON" Target="SCHEDULED_UPDATE_TGDB_DATABASE_CRON" Default="0 5 * * *" Mode="" Description="Cron expression for scheduled TGDB database update" Type="Variable" Display="advanced" Required="false" Mask="false"/>
 </Container>
