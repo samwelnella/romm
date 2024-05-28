@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from config.config_manager import ConfigManager
 from alembic import context
 from models.base import BaseModel
-from models.assets import Save, Screenshot, State  # noqa
+from models.assets import Save, Screenshot, State, Manual  # noqa
 from models.rom import Rom  # noqa
 from models.platform import Platform  # noqa
 from models.user import User  # noqa

@@ -28,10 +28,11 @@ const tab = ref<
   | "details"
   | "saves"
   | "states"
+  | "manuals"
   | "notes"
-  | "additionalcontent"
+  | "expansions"
   | "screenshots"
-  | "relatedgames"
+  | "related"
   | "emulation"
 >("details");
 const theme = useTheme();
@@ -179,6 +180,7 @@ watch(
             <v-tab value="details" rounded="0">Details</v-tab>
             <v-tab value="saves" rounded="0">Saves</v-tab>
             <v-tab value="states" rounded="0">States</v-tab>
+            <v-tab value="manuals" rounded="0">Manuals</v-tab>
             <v-tab value="notes" rounded="0">Notes</v-tab>
             <v-tab
               v-if="
@@ -186,12 +188,11 @@ watch(
                 ((rom.igdb_metadata?.expansions ?? []).length > 0 ||
                   (rom.igdb_metadata?.dlcs ?? []).length > 0)
               "
-              value="additionalcontent"
+              value="expansions"
               rounded="0"
-              >Additional content</v-tab
             >
-            <!-- TODO: user screenshots -->
-            <!-- <v-tab value="screenshots" rounded="0">Screenshots</v-tab> -->
+              Expansions
+            </v-tab>
             <v-tab
               v-if="
                 smAndDown &&
@@ -199,10 +200,11 @@ watch(
                   (rom.igdb_metadata?.remasters ?? []).length > 0 ||
                   (rom.igdb_metadata?.expanded_games ?? []).length > 0)
               "
-              value="relatedgames"
+              value="related"
               rounded="0"
-              >Related Games</v-tab
             >
+              Related
+            </v-tab>
           </v-tabs>
           <v-tabs
             v-if="showEmulation"
@@ -225,6 +227,9 @@ watch(
               <v-window-item value="states">
                 <states :rom="rom" />
               </v-window-item>
+              <v-window-item value="manuals">
+                <manuals :rom="rom" />
+              </v-window-item>
               <v-window-item value="notes">
                 <notes :rom="rom" />
               </v-window-item>
@@ -233,14 +238,10 @@ watch(
                   mdAndDown &&
                   (rom.igdb_metadata?.expansions || rom.igdb_metadata?.dlcs)
                 "
-                value="additionalcontent"
+                value="expansions"
               >
                 <additional-content :rom="rom" />
               </v-window-item>
-              <!-- TODO: user screenshots -->
-              <!-- <v-window-item v-if="rom.user_screenshots.lenght > 0" value="screenshots">
-                <screenshots :rom="rom" />
-              </v-window-item> -->
               <v-window-item
                 v-if="
                   smAndDown &&
@@ -248,7 +249,7 @@ watch(
                     rom.igdb_metadata?.remasters ||
                     rom.igdb_metadata?.expanded_games)
                 "
-                value="relatedgames"
+                value="related"
               >
                 <related-games :rom="rom" />
               </v-window-item>

@@ -2,7 +2,7 @@ import enum
 import datetime
 
 from models.base import BaseModel
-from models.assets import Save, Screenshot, State
+from models.assets import Save, Screenshot, State, Manual
 from sqlalchemy import Boolean, Column, Enum, Integer, String, DateTime
 from starlette.authentication import SimpleUser
 from sqlalchemy.orm import Mapped, relationship
@@ -39,6 +39,7 @@ class User(BaseModel, SimpleUser):
         "Screenshot", back_populates="user"
     )
     notes: Mapped[list[RomNote]] = relationship("RomNote", back_populates="user")
+    manuals: Mapped[list[Manual]] = relationship("Manual", back_populates="user")
 
     @property
     def oauth_scopes(self):

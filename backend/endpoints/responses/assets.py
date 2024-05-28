@@ -52,3 +52,7 @@ class StateSchema(BaseAsset):
 class UploadedStatesResponse(TypedDict):
     uploaded: int
     states: list[StateSchema]
+
+
+class ManualSchema(BaseAsset):
+    is_public: bool

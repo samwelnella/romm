@@ -1,6 +1,6 @@
 from functools import cached_property
 from models.base import BaseModel
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func, BigInteger
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func, BigInteger, Boolean
 from sqlalchemy.orm import relationship
 from typing import Optional
 
@@ -94,3 +94,18 @@ class Screenshot(RomAsset):
 
     rom = relationship("Rom", lazy="joined", back_populates="screenshots")
     user = relationship("User", lazy="joined", back_populates="screenshots")
+
+
+class Manual(RomAsset):
+    __tablename__ = "manuals"
+    __table_args__ = {"extend_existing": True}
+
+    is_public: bool = Column(Boolean, default=False)
+
+    rom = relationship("Rom", lazy="joined", back_populates="manuals")
+    user = relationship("User", lazy="joined", back_populates="manuals")
+
+    @property
+    def user__username(self) -> str:
+        return self.user.username
+

@@ -2,7 +2,7 @@ from functools import cached_property
 from datetime import datetime
 
 from config import FRONTEND_RESOURCES_PATH
-from models.assets import Save, Screenshot, State
+from models.assets import Save, Screenshot, State, Manual
 from models.base import BaseModel
 from sqlalchemy.dialects.mysql.json import JSON as MySQLJSON
 from sqlalchemy import (
@@ -80,6 +80,7 @@ class Rom(BaseModel):
         "Screenshot", back_populates="rom"
     )
     notes: Mapped[list["RomNote"]] = relationship("RomNote", back_populates="rom")
+    manuals: Mapped[list["Manual"]] = relationship("Manual", back_populates="rom")
 
     @property
     def platform_slug(self) -> str:
