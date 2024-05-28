@@ -669,12 +669,12 @@ SLUG_TO_MOBY_ID: Final = {
     "videobrain": {"id": 214, "name": "VideoBrain"},
     "videopac-g7400": {"id": 128, "name": "Videopac+ G7400"},
     "virtual-boy": {"id": 38, "name": "Virtual Boy"},
-    "virtualboy": {"id": 38, "name": "Virtual Boy"},
+    "virtualboy": {"id": 38, "name": "Virtual Boy"}, # IGDB
     "wipi": {"id": 260, "name": "WIPI"},
     "wang2200": {"id": 217, "name": "Wang 2200"},
     "wii": {"id": 82, "name": "Wii"},
     "wii-u": {"id": 132, "name": "Wii U"},
-    "wiiu": {"id": 132, "name": "Wii U"},
+    "wiiu": {"id": 132, "name": "Wii U"}, # IGDB
     "windows": {"id": 3, "name": "Windows"},
     "win": {"id": 3, "name": "Windows"},  # IGDB
     "win3x": {"id": 5, "name": "Windows 3.x"},
