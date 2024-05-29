@@ -46,6 +46,7 @@ fakeredis = "^2.21.3"
 yarl = "^1.9.4"
 joserfc = "^0.9.0"
 pillow = "^10.3.0"
+redis = {extras = ["redisearch"], version = "^5.0.4"}
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"

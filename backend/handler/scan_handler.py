@@ -9,9 +9,10 @@ from handler.filesystem import (
     fs_resource_handler,
     fs_rom_handler,
 )
-from handler.metadata import meta_igdb_handler, meta_moby_handler
+from handler.metadata import meta_igdb_handler, meta_moby_handler, meta_ra_handler
 from handler.metadata.igdb_handler import IGDBPlatform
 from handler.metadata.moby_handler import MobyGamesPlatform
+from handler.metadata.ra_handler import RetroAchievementsPlatform
 from logger.logger import log
 from models.assets import Save, Screenshot, State
 from models.platform import Platform
@@ -96,11 +97,16 @@ def scan_platform(
         if "moby" in metadata_sources
         else MobyGamesPlatform(moby_id=None, slug=platform_attrs["slug"])
     )
+    ra_platform = (
+        meta_ra_handler.get_platform(platform_attrs["slug"])
+        if "retroachivements" in metadata_sources
+        else RetroAchievementsPlatform(ra_id=None, slug=platform_attrs["slug"])
+    )
 
     platform_attrs["name"] = platform_attrs["slug"].replace("-", " ").title()
-    platform_attrs.update({**moby_platform, **igdb_platform})  # Reverse order
+    platform_attrs.update({**ra_platform, **moby_platform, **igdb_platform})  # Reverse order
 
-    if platform_attrs["igdb_id"] or platform_attrs["moby_id"]:
+    if platform_attrs["igdb_id"] or platform_attrs["moby_id"] or platform_attrs["ra_id"]:
         log.info(
             emoji.emojize(f"  Identified as {platform_attrs['name']} :video_game:")
         )
