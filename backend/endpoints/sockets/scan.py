@@ -81,8 +81,8 @@ def _should_scan_rom(scan_type: ScanType, rom: Rom, selected_roms: list):
 async def scan_platforms(
     platform_ids: list[int],
     scan_type: ScanType = ScanType.QUICK,
-    selected_roms: list[str] | None = None,
-    metadata_sources: list[str] | None = None,
+    selected_roms: list[str] = [],
+    metadata_sources: list[str] = ["igdb", "moby"],
 ):
     """Scan all the listed platforms and fetch metadata from different sources
 
@@ -92,12 +92,6 @@ async def scan_platforms(
         selected_roms (list[str], optional): List of selected roms to be scanned. Defaults to [].
         metadata_sources (list[str], optional): List of metadata sources to be used. Defaults to all sources.
     """
-
-    if not selected_roms:
-        selected_roms = []
-
-    if not metadata_sources:
-        metadata_sources = ["igdb", "moby"]
 
     sm = _get_socket_manager()
 

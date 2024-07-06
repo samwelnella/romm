@@ -72,6 +72,11 @@ const scanOptions = [
 ];
 const scanType = ref("quick");
 
+// Functions
+function selectAll() {
+  platformsToScan.value = [{ name: "All platforms", slug: 'all' } as Platform];
+}
+
 async function scan() {
   scanningStore.set(true);
   scanningPlatforms.value = [];
@@ -114,6 +119,14 @@ async function stopScan() {
         hide-details
         chips
       >
+        <template #prepend-item>
+          <v-list-item @click="selectAll" class="py-4" title="All platforms">
+            <template #prepend>
+              <platform-icon :size="35" slug="" />
+            </template>
+          </v-list-item>
+          <v-divider />
+        </template>
         <template #item="{ props, item }">
           <v-list-item
             class="py-4"
