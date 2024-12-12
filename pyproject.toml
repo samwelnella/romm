@@ -48,6 +48,7 @@ types-colorama = "^0.4"
 types-passlib = "^1.7.7.20240311"
 types-pyyaml = "^6.0.12.20240311"
 types-redis = "^4.6.0.20240311 "
+coverage = "^7.6.9"
 
 [tool.poetry.group.test.dependencies]
 fakeredis = "^2.21.3"
