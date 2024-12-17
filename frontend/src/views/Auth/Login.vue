@@ -11,8 +11,8 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 const emitter = inject<Emitter<Events>>("emitter");
 const router = useRouter();
-const username = ref("");
-const password = ref("");
+const username = ref("demo");
+const password = ref("demo");
 const visiblePassword = ref(false);
 const logging = ref(false);
 
