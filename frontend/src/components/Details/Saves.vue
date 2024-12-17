@@ -9,10 +9,14 @@ import type { Emitter } from "mitt";
 import { inject, onMounted, ref, watch } from "vue";
 import { useDisplay } from "vuetify";
 import { useI18n } from "vue-i18n";
+import storeAuth from "@/stores/auth";
+import { storeToRefs } from "pinia";
 
 // Props
 const { t } = useI18n();
 const { xs, mdAndUp } = useDisplay();
+const auth = storeAuth();
+const { scopes } = storeToRefs(auth);
 const props = defineProps<{ rom: DetailedRom }>();
 const selectedSaves = ref<SaveSchema[]>([]);
 const emitter = inject<Emitter<Events>>("emitter");
@@ -93,6 +97,7 @@ onMounted(() => {
     <template #header.actions>
       <v-btn-group divided density="compact">
         <v-btn
+          v-if="scopes.includes('assets.write')"
           class="bg-secondary"
           size="small"
           @click="emitter?.emit('addSavesDialog', rom)"
@@ -109,6 +114,7 @@ onMounted(() => {
           <v-icon>mdi-download</v-icon>
         </v-btn>
         <v-btn
+          v-if="scopes.includes('assets.write')"
           class="bg-secondary"
           :class="{
             'text-romm-red': selectedSaves.length,
@@ -151,6 +157,7 @@ onMounted(() => {
     <template #item.actions="{ item }">
       <v-btn-group divided density="compact">
         <v-btn
+          v-if="scopes.includes('assets.write')"
           class="bg-secondary"
           :href="item.download_path"
           download
@@ -159,6 +166,7 @@ onMounted(() => {
           <v-icon> mdi-download </v-icon>
         </v-btn>
         <v-btn
+          v-if="scopes.includes('assets.write')"
           class="bg-secondary"
           size="small"
           @click="

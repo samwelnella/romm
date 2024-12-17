@@ -38,19 +38,19 @@ class Scope(enum.StrEnum):
 
 DEFAULT_SCOPES_MAP: Final = {
     Scope.ME_READ: "View your profile",
-    Scope.ME_WRITE: "Modify your profile",
     Scope.ROMS_READ: "View ROMs",
     Scope.PLATFORMS_READ: "View platforms",
     Scope.ASSETS_READ: "View assets",
-    Scope.ASSETS_WRITE: "Modify assets",
     Scope.FIRMWARE_READ: "View firmware",
     Scope.ROMS_USER_READ: "View user-rom properties",
-    Scope.ROMS_USER_WRITE: "Modify user-rom properties",
     Scope.COLLECTIONS_READ: "View collections",
-    Scope.COLLECTIONS_WRITE: "Modify collections",
 }
 
 WRITE_SCOPES_MAP: Final = {
+    Scope.ME_WRITE: "Modify your profile",
+    Scope.ASSETS_WRITE: "Modify assets",
+    Scope.ROMS_USER_WRITE: "Modify user-rom properties",
+    Scope.COLLECTIONS_WRITE: "Modify collections",
     Scope.ROMS_WRITE: "Modify ROMs",
     Scope.PLATFORMS_WRITE: "Modify platforms",
     Scope.FIRMWARE_WRITE: "Modify firmware",

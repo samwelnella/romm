@@ -9,6 +9,7 @@ import "md-editor-v3/lib/style.css";
 import { ref, watch } from "vue";
 import { useDisplay, useTheme } from "vuetify";
 import { useI18n } from "vue-i18n";
+import { storeToRefs } from "pinia";
 
 // Props
 const { t } = useI18n();
@@ -16,6 +17,7 @@ const props = defineProps<{ rom: DetailedRom }>();
 const auth = storeAuth();
 const theme = useTheme();
 const { mdAndUp, smAndDown } = useDisplay();
+const { scopes } = storeToRefs(auth);
 const editingNote = ref(false);
 const romUser = ref(props.rom.rom_user);
 const publicNotes =
@@ -76,6 +78,7 @@ watch(
       >
         <v-col cols="12" md="5">
           <v-checkbox
+            :disabled="!scopes.includes('roms.user.write')"
             v-model="romUser.backlogged"
             color="romm-accent-1"
             hide-details
@@ -88,6 +91,7 @@ watch(
             >
           </v-checkbox>
           <v-checkbox
+            :disabled="!scopes.includes('roms.user.write')"
             v-model="romUser.now_playing"
             color="romm-accent-1"
             hide-details
@@ -100,6 +104,7 @@ watch(
             >
           </v-checkbox>
           <v-checkbox
+            :disabled="!scopes.includes('roms.user.write')"
             v-model="romUser.hidden"
             color="romm-accent-1"
             hide-details
@@ -128,6 +133,7 @@ watch(
                 ripple
                 length="10"
                 size="26"
+                :disabled="!scopes.includes('roms.user.write')"
                 v-model="romUser.rating"
                 @update:model-value="
                   romUser.rating =
@@ -144,6 +150,7 @@ watch(
             <v-col>
               <v-slider
                 :class="{ 'ml-4': mdAndUp }"
+                :disabled="!scopes.includes('roms.user.write')"
                 v-model="romUser.difficulty"
                 min="1"
                 max="10"
@@ -168,6 +175,7 @@ watch(
             <v-col>
               <v-slider
                 :class="{ 'ml-4': mdAndUp }"
+                :disabled="!scopes.includes('roms.user.write')"
                 v-model="romUser.completion"
                 min="1"
                 max="100"
@@ -184,6 +192,7 @@ watch(
           </v-row>
           <div class="d-flex align-center mt-4">
             <v-select
+              :disabled="!scopes.includes('roms.user.write')"
               v-model="romUser.status"
               :items="statusOptions"
               hide-details
@@ -251,6 +260,7 @@ watch(
               open-delay="500"
               ><template #activator="{ props: tooltipProps }">
                 <v-btn
+                  v-if="scopes.includes('roms.user.write')"
                   @click="editNote"
                   v-bind="tooltipProps"
                   class="bg-terciary"
@@ -267,7 +277,7 @@ watch(
     </v-card-title>
     <v-card-text class="pa-2">
       <MdEditor
-        v-if="editingNote"
+        v-if="editingNote && scopes.includes('roms.user.write')"
         v-model="romUser.note_raw_markdown"
         :theme="theme.name.value == 'dark' ? 'dark' : 'light'"
         language="en-US"

@@ -70,6 +70,7 @@ async function logout() {
     </v-list>
     <v-list rounded="0" class="pa-0">
       <v-list-item
+        v-if="scopes.includes('me.write')"
         @click="emitter?.emit('showEditUserDialog', auth.user as UserSchema)"
         append-icon="mdi-account"
         >{{ t("common.profile") }}</v-list-item
