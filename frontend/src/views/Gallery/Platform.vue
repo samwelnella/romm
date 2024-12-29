@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import GalleryAppBar from "@/components/Gallery/AppBar/Platform/Base.vue";
 import FabOverlay from "@/components/Gallery/FabOverlay.vue";
-import EmptyGame from "@/components/common/EmptyGame.vue";
-import EmptyPlatform from "@/components/common/EmptyPlatform.vue";
+import EmptyGame from "@/components/common/EmptyStates/EmptyGame.vue";
+import EmptyPlatform from "@/components/common/EmptyStates/EmptyPlatform.vue";
 import GameCard from "@/components/common/Game/Card/Base.vue";
 import GameDataTable from "@/components/common/Game/Table.vue";
 import romApi from "@/services/api/rom";
@@ -56,7 +56,7 @@ async function fetchRoms() {
   await romApi
     .getRoms({
       platformId: romsStore.currentPlatform?.id,
-      searchTerm: normalizeString(galleryFilterStore.filterSearch),
+      searchTerm: normalizeString(galleryFilterStore.filterText),
     })
     .then(({ data }) => {
       romsStore.set(data);
@@ -204,6 +204,7 @@ function onScroll() {
 function resetGallery() {
   romsStore.reset();
   galleryFilterStore.reset();
+  galleryFilterStore.activeFilterDrawer = false;
   scrolledToTop.value = true;
   noPlatformError.value = false;
   itemsShown.value = itemsPerBatch.value;
@@ -225,37 +226,38 @@ onMounted(async () => {
   watch(
     () => allPlatforms.value,
     (platforms) => {
-      if (
-        platforms.length > 0 &&
-        platforms.some((platform) => platform.id === routePlatformId)
-      ) {
-        const platform = platforms.find(
-          (platform) => platform.id === routePlatformId,
-        );
+      if (platforms.length > 0) {
+        if (platforms.some((platform) => platform.id === routePlatformId)) {
+          const platform = platforms.find(
+            (platform) => platform.id === routePlatformId,
+          );
 
-        // Check if the current platform is different or no ROMs have been loaded
-        if (
-          (currentPlatform.value?.id !== routePlatformId ||
-            allRoms.value.length === 0) &&
-          platform
-        ) {
-          romsStore.setCurrentPlatform(platform);
-          resetGallery();
-          fetchRoms();
-          setFilters();
+          // Check if the current platform is different or no ROMs have been loaded
+          if (
+            (currentPlatform.value?.id !== routePlatformId ||
+              allRoms.value.length === 0) &&
+            platform
+          ) {
+            romsStore.setCurrentPlatform(platform);
+            resetGallery();
+            fetchRoms();
+            setFilters();
+          }
+
+          // Check for query params to set filters
+          if (route.query.filter && route.query.value) {
+            const filter = route.query.filter as FilterType;
+            const value = route.query.value as string;
+            filterToSetFilter[filter](value);
+            onFilterChange(); // Update the UI
+            router.replace({ query: {} }); // Clear query params
+          }
+
+          window.addEventListener("wheel", onScroll);
+          window.addEventListener("scroll", onScroll);
+        } else {
+          noPlatformError.value = true;
         }
-
-        // Check for query params to set filters
-        if (route.query.filter && route.query.value) {
-          const filter = route.query.filter as FilterType;
-          const value = route.query.value as string;
-          filterToSetFilter[filter](value);
-          onFilterChange(); // Update the UI
-          router.replace({ query: {} }); // Clear query params
-        }
-
-        window.addEventListener("wheel", onScroll);
-        window.addEventListener("scroll", onScroll);
       }
     },
     { immediate: true }, // Ensure watcher is triggered immediately
@@ -287,6 +289,8 @@ onBeforeRouteUpdate(async (to, from) => {
           romsStore.setCurrentPlatform(platform);
           fetchRoms();
           setFilters();
+        } else {
+          noPlatformError.value = true;
         }
       }
     },

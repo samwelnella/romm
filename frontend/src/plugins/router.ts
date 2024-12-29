@@ -1,6 +1,8 @@
 // Composables
 import { createRouter, createWebHistory } from "vue-router";
 import storeHeartbeat from "@/stores/heartbeat";
+import storeAuth from "@/stores/auth";
+import { storeToRefs } from "pinia";
 
 const routes = [
   {
@@ -38,6 +40,11 @@ const routes = [
         component: () => import("@/views/Home.vue"),
       },
       {
+        path: "search",
+        name: "search",
+        component: () => import("@/views/Gallery/Search.vue"),
+      },
+      {
         path: "platform/:platform",
         name: "platform",
         component: () => import("@/views/Gallery/Platform.vue"),
@@ -68,7 +75,7 @@ const routes = [
         component: () => import("@/views/Scan.vue"),
       },
       {
-        path: "/user-interface",
+        path: "user-interface",
         component: () => import("@/layouts/Settings.vue"),
         children: [
           {
@@ -79,7 +86,7 @@ const routes = [
         ],
       },
       {
-        path: "/library-management",
+        path: "library-management",
         component: () => import("@/layouts/Settings.vue"),
         children: [
           {
@@ -90,7 +97,7 @@ const routes = [
         ],
       },
       {
-        path: "/administration",
+        path: "administration",
         component: () => import("@/layouts/Settings.vue"),
         children: [
           {
@@ -102,8 +109,8 @@ const routes = [
       },
       {
         path: ":pathMatch(.*)*",
-        name: "noMatch",
-        component: () => import("@/views/Home.vue"),
+        name: "404",
+        component: () => import("@/views/404.vue"),
       },
     ],
   },
@@ -116,8 +123,31 @@ const router = createRouter({
 
 router.beforeEach(async (to, _from, next) => {
   const heartbeat = storeHeartbeat();
-  if (to.name == "setup" && !heartbeat.value.SHOW_SETUP_WIZARD) {
-    next({ name: "home" });
+  const auth = storeAuth();
+  const { user } = storeToRefs(auth);
+
+  if (heartbeat.value.SHOW_SETUP_WIZARD && to.name?.toString() !== "setup") {
+    next({ name: "setup" });
+  } else if (!heartbeat.value.SHOW_SETUP_WIZARD) {
+    if (
+      (to.name?.toString() === "login" || to.name?.toString() === "setup") &&
+      user.value
+    ) {
+      next({ name: "home" });
+    } else if (to.name?.toString() !== "login" && !user.value) {
+      next({ name: "login" });
+    } else if (
+      to.name &&
+      user.value &&
+      ((["scan", "management"].includes(to.name.toString()) &&
+        !user.value.oauth_scopes.includes("platforms.write")) ||
+        (["administration"].includes(to.name.toString()) &&
+          !user.value.oauth_scopes.includes("users.write")))
+    ) {
+      next({ name: "404" });
+    } else {
+      next();
+    }
   } else {
     next();
   }
