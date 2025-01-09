@@ -6,9 +6,9 @@ import userApi from "@/services/api/user";
 import storeAuth from "@/stores/auth";
 import storeConfig from "@/stores/config";
 import storeHeartbeat from "@/stores/heartbeat";
-import "@/styles/common.css";
-import "@/styles/fonts.css";
-import "@/styles/scrollbar.css";
+import "@/styles/common.css?inline";
+import "@/styles/fonts.css?inline";
+import "@/styles/scrollbar.css?inline";
 import { createApp } from "vue";
 
 async function initializeData() {
@@ -35,7 +35,32 @@ async function initializeData() {
   }
 }
 
+function registerServiceWorker() {
+  if ("serviceWorker" in navigator) {
+    if (import.meta.env.DEV) {
+      // Unregister service worker during development
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister();
+          }
+        })
+        .then(() => navigator.serviceWorker.register("/sw.js"))
+        .then((registration) => console.log("SW registered:", registration))
+        .catch((err) => console.error("SW registration failed:", err));
+    } else {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => console.log("SW registered:", registration))
+        .catch((err) => console.error("SW registration failed:", err));
+    }
+  }
+}
+
 async function initializeApp() {
+  registerServiceWorker();
+
   const app = createApp(App);
 
   // Registrar vuetify + pinia + i18n + emitter

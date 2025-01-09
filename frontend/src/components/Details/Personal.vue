@@ -5,7 +5,7 @@ import type { DetailedRom } from "@/stores/roms";
 import type { RomUserStatus } from "@/__generated__";
 import { difficultyEmojis, getTextForStatus, getEmojiForStatus } from "@/utils";
 import { MdEditor, MdPreview } from "md-editor-v3";
-import "md-editor-v3/lib/style.css";
+import "md-editor-v3/lib/style.css?inline";
 import { ref, watch } from "vue";
 import { useDisplay, useTheme } from "vuetify";
 import { useI18n } from "vue-i18n";

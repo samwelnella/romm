@@ -2,6 +2,7 @@
 import vue from "@vitejs/plugin-vue";
 import { VitePWA } from "vite-plugin-pwa";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
+import mkcert from "vite-plugin-mkcert";
 
 // Utilities
 import { URL, fileURLToPath } from "node:url";
@@ -45,6 +46,10 @@ export default defineConfig(({ mode }) => {
           type: "module",
         },
       }),
+      env.DEV_HTTPS &&
+        mkcert({
+          hosts: ["localhost", "127.0.0.1", "romm.dev"],
+        }),
     ],
     define: {
       "process.env": {},
@@ -74,7 +79,10 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/openapi.json/, "/openapi.json"),
         },
       },
-      port: 3000,
+      port: env.DEV_HTTPS ? 443 : 3000,
+      https: {
+        cert: "~/.vite-plugin-mkcert/dev.pem",
+      },
     },
   };
 });
