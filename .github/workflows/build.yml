@@ -1,26 +1,20 @@
-name: Build Docker Image and Trigger Docs/Website
+name: Build and Push Docker Image
 
 on:
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+*"
-  release:
-    types: [published]
 
 permissions: read-all
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.event_name != 'push' || github.event_name == 'release'
     permissions:
       id-token: write
       contents: write
       packages: write
     steps:
-      - name: Run only once per release
-        run: echo "Triggered by ${{ github.event_name }}"
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -107,38 +101,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           target: full-image
-
-  trigger-docs-and-web:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    steps:
-      - name: Trigger docs build
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const response = await github.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', {
-              owner: 'romapp',
-              repo: 'docs',
-              workflow_id: 'deploy.yml',
-              ref: 'main',
-              inputs: {
-                version: '${{ github.event.release.tag_name }}'
-              }
-            });
-            console.log(response);
-
-      - name: Trigger website build
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const response = await github.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', {
-              owner: 'romapp',
-              repo: 'marketing-site',
-              workflow_id: 'deploy.yml',
-              ref: 'main',
-              inputs: {
-                version: '${{ github.event.release.tag_name }}'
-              }
-            });
-            console.log(response);
