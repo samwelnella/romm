@@ -25,14 +25,32 @@ const editable = ref(false);
   <r-section
     icon="mdi-gamepad-variant"
     :title="t('settings.platforms-versions')"
+    class="mx-2 mt-4 mb-2"
   >
+    <template #toolbar-title-append>
+      <v-tooltip bottom max-width="400">
+        <template #activator="{ props }">
+          <v-btn
+            v-bind="props"
+            size="small"
+            variant="text"
+            icon="mdi-information-outline"
+          />
+        </template>
+        <p>
+          Versions of the same platform. A common example is Capcom Play System
+          1 is an arcade system. Platform versions will let you setup a custom
+          platform for RomM to import and tell RomM which platform it needs to
+          scrape against.
+        </p>
+      </v-tooltip>
+    </template>
     <template #toolbar-append>
       <v-btn
         v-if="authStore.scopes.includes('platforms.write')"
         class="ma-2"
-        rounded="0"
         size="small"
-        :color="editable ? 'romm-accent-1' : ''"
+        :color="editable ? 'primary' : ''"
         variant="text"
         icon="mdi-cog"
         @click="editable = !editable"
@@ -53,6 +71,7 @@ const editable = ref(false);
             :editable="authStore.scopes.includes('platforms.write') && editable"
             :slug="slug"
             :fs-slug="fsSlug"
+            class="mx-1 mt-2"
             @click-edit="
               emitter?.emit('showCreatePlatformVersionDialog', {
                 fsSlug: fsSlug,
@@ -67,7 +86,7 @@ const editable = ref(false);
             "
           />
         </v-col>
-        <v-col cols="6" sm="4" md="3" lg="2" class="px-1">
+        <v-col cols="6" sm="4" md="3" lg="2" class="px-1 pt-2">
           <add-btn
             :enabled="editable"
             @click="

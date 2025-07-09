@@ -1,10 +1,9 @@
-/* generated using openapi-typescript-codegen -- do no edit */
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-
+import type { RAProgression } from './RAProgression';
 import type { Role } from './Role';
-
 export type UserSchema = {
     id: number;
     username: string;
@@ -15,6 +14,8 @@ export type UserSchema = {
     avatar_path: string;
     last_login: (string | null);
     last_active: (string | null);
+    ra_username?: (string | null);
+    ra_progression?: (RAProgression | null);
     created_at: string;
     updated_at: string;
 };

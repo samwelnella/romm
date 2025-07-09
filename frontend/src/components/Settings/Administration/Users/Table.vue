@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import CreateUserDialog from "@/components/Settings/Administration/Users/Dialog/CreateUser.vue";
+import InviteLinkDialog from "@/components/Settings/Administration/Users/Dialog/InviteLink.vue";
 import DeleteUserDialog from "@/components/Settings/Administration/Users/Dialog/DeleteUser.vue";
 import RSection from "@/components/common/RSection.vue";
 import userApi from "@/services/api/user";
 import storeAuth from "@/stores/auth";
 import storeUsers, { type User } from "@/stores/users";
 import type { Events } from "@/types/emitter";
-import { defaultAvatarPath, formatTimestamp } from "@/utils";
+import { defaultAvatarPath, formatTimestamp, getRoleIcon } from "@/utils";
 import type { Emitter } from "mitt";
 import { storeToRefs } from "pinia";
 import { inject, onMounted, ref } from "vue";
-import { useDisplay } from "vuetify";
+import { useI18n } from "vue-i18n";
 
 // Props
+const { t } = useI18n();
 const userSearch = ref("");
-const { xs } = useDisplay();
 const emitter = inject<Emitter<Events>>("emitter");
 const usersStore = storeUsers();
 const { allUsers } = storeToRefs(usersStore);
@@ -32,6 +33,12 @@ const HEADERS = [
     align: "start",
     sortable: true,
     key: "username",
+  },
+  {
+    title: "Email",
+    align: "start",
+    sortable: true,
+    key: "email",
   },
   {
     title: "Role",
@@ -53,16 +60,6 @@ const HEADERS = [
   },
   { title: "", align: "end", key: "actions", sortable: false },
 ] as const;
-const PER_PAGE_OPTIONS = [10, 25, 50, 100];
-const page = ref(1);
-const storedUsersPerPage = parseInt(localStorage.getItem("usersPerPage") ?? "");
-const usersPerPage = ref(isNaN(storedUsersPerPage) ? 25 : storedUsersPerPage);
-const pageCount = ref(0);
-emitter?.on("updateDataTablePages", updateDataTablePages);
-
-function updateDataTablePages() {
-  pageCount.value = Math.ceil(usersStore.allUsers.length / usersPerPage.value);
-}
 
 function disableUser(user: User) {
   userApi.updateUser(user).catch(({ response, message }) => {
@@ -90,40 +87,50 @@ onMounted(() => {
 </script>
 
 <template>
-  <r-section icon="mdi-account" title="Users">
+  <r-section icon="mdi-account" title="Users" class="ma-2">
     <template #content>
       <v-text-field
         v-model="userSearch"
         prepend-inner-icon="mdi-magnify"
         label="Search"
-        rounded="0"
         single-line
         hide-details
         clearable
+        rounded="0"
         density="comfortable"
-        class="bg-secondary"
+        class="bg-surface"
       />
-      <v-data-table
-        v-model:items-per-page="usersPerPage"
-        v-model:page="page"
-        :items-per-page-options="PER_PAGE_OPTIONS"
+      <v-data-table-virtual
+        :style="{ 'max-height': '40dvh' }"
         :search="userSearch"
         :headers="HEADERS"
         :items="allUsers"
         :sort-by="[{ key: 'username', order: 'asc' }]"
         fixed-header
         fixed-footer
+        density="comfortable"
+        class="rounded bg-background"
         hide-default-footer
       >
         <template #header.actions>
-          <v-btn
-            prepend-icon="mdi-plus"
-            variant="outlined"
-            class="text-romm-accent-1"
-            @click="emitter?.emit('showCreateUserDialog', null)"
-          >
-            Add
-          </v-btn>
+          <v-btn-group divided density="compact">
+            <v-btn
+              prepend-icon="mdi-plus"
+              variant="outlined"
+              class="text-primary"
+              @click="emitter?.emit('showCreateUserDialog', null)"
+            >
+              {{ t("common.add") }}
+            </v-btn>
+            <v-btn
+              prepend-icon="mdi-share"
+              variant="outlined"
+              class="text-primary"
+              @click="emitter?.emit('showCreateInviteLinkDialog')"
+            >
+              {{ t("settings.invite-link") }}
+            </v-btn>
+          </v-btn-group>
         </template>
         <template #item.avatar_path="{ item }">
           <v-avatar>
@@ -136,6 +143,17 @@ onMounted(() => {
             />
           </v-avatar>
         </template>
+        <template #item.username="{ item }">
+          <v-list-item class="pa-0" min-width="120px">
+            {{ item.username }}
+          </v-list-item>
+        </template>
+        <template #item.role="{ item }">
+          <v-list-item class="pa-0" min-width="100px">
+            <v-icon class="mr-2">{{ getRoleIcon(item.role) }}</v-icon>
+            {{ item.role }}
+          </v-list-item>
+        </template>
         <template #item.last_active="{ item }">
           {{ formatTimestamp(item.last_active) }}
         </template>
@@ -143,7 +161,7 @@ onMounted(() => {
           <v-switch
             inset
             v-model="item.enabled"
-            color="romm-accent-1"
+            color="primary"
             :disabled="item.id == auth.user?.id"
             hide-details
             @change="disableUser(item)"
@@ -166,38 +184,11 @@ onMounted(() => {
             </v-btn>
           </v-btn-group>
         </template>
-
-        <template #bottom>
-          <v-divider />
-          <div>
-            <v-row no-gutters class="pa-1 align-center justify-center">
-              <v-col cols="8" sm="9" md="10" class="px-3">
-                <v-pagination
-                  :show-first-last-page="!xs"
-                  v-model="page"
-                  rounded="0"
-                  active-color="romm-accent-1"
-                  :length="pageCount"
-                />
-              </v-col>
-              <v-col>
-                <v-select
-                  v-model="usersPerPage"
-                  class="pa-2"
-                  label="Users per page"
-                  density="compact"
-                  variant="outlined"
-                  :items="PER_PAGE_OPTIONS"
-                  hide-details
-                />
-              </v-col>
-            </v-row>
-          </div>
-        </template>
-      </v-data-table>
+      </v-data-table-virtual>
     </template>
   </r-section>
 
   <create-user-dialog />
+  <invite-link-dialog />
   <delete-user-dialog />
 </template>

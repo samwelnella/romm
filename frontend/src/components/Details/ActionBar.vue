@@ -6,6 +6,7 @@ import storeDownload from "@/stores/download";
 import storeHeartbeat from "@/stores/heartbeat";
 import storeConfig from "@/stores/config";
 import type { DetailedRom } from "@/stores/roms";
+import storeAuth from "@/stores/auth";
 import type { Events } from "@/types/emitter";
 import {
   getDownloadLink,
@@ -26,6 +27,7 @@ const playInfoIcon = ref("mdi-play");
 const qrCodeIcon = ref("mdi-qrcode");
 const configStore = storeConfig();
 const { config } = storeToRefs(configStore);
+const auth = storeAuth();
 
 const platformSlug = computed(() =>
   props.rom.platform_slug in config.value.PLATFORMS_VERSIONS
@@ -49,7 +51,7 @@ const is3DSRom = computed(() => {
 async function copyDownloadLink(rom: DetailedRom) {
   const downloadLink = getDownloadLink({
     rom,
-    files: downloadStore.filesToDownload,
+    fileIDs: downloadStore.fileIDsToDownload,
   });
   if (navigator.clipboard && window.isSecureContext) {
     await navigator.clipboard.writeText(downloadLink);
@@ -74,9 +76,10 @@ async function copyDownloadLink(rom: DetailedRom) {
         @click="
           romApi.downloadRom({
             rom,
-            files: downloadStore.filesToDownload,
+            fileIDs: downloadStore.fileIDsToDownload,
           })
         "
+        :aria-label="`Download ${rom.name}`"
       >
         <v-tooltip
           activator="parent"
@@ -87,7 +90,11 @@ async function copyDownloadLink(rom: DetailedRom) {
         >
         <v-icon icon="mdi-download" size="large" />
       </v-btn>
-      <v-btn class="flex-grow-1" @click="copyDownloadLink(rom)">
+      <v-btn
+        :aria-label="`Copy download link ${rom.name}`"
+        class="flex-grow-1"
+        @click="copyDownloadLink(rom)"
+      >
         <v-tooltip
           activator="parent"
           location="top"
@@ -106,6 +113,7 @@ async function copyDownloadLink(rom: DetailedRom) {
             params: { rom: rom?.id },
           })
         "
+        :aria-label="`Play ${rom.name}`"
       >
         <v-icon :icon="playInfoIcon" />
       </v-btn>
@@ -118,6 +126,7 @@ async function copyDownloadLink(rom: DetailedRom) {
             params: { rom: rom?.id },
           })
         "
+        :aria-label="`Play ${rom.name}`"
       >
         <v-icon :icon="playInfoIcon" />
       </v-btn>
@@ -125,12 +134,24 @@ async function copyDownloadLink(rom: DetailedRom) {
         v-if="is3DSRom"
         class="flex-grow-1"
         @click="emitter?.emit('showQRCodeDialog', rom)"
+        :aria-label="`Show ${rom.name} QR code`"
       >
         <v-icon :icon="qrCodeIcon" />
       </v-btn>
-      <v-menu location="bottom">
+      <v-menu
+        v-if="
+          auth.scopes.includes('roms.write') ||
+          auth.scopes.includes('roms.user.write') ||
+          auth.scopes.includes('collections.write')
+        "
+        location="bottom"
+      >
         <template #activator="{ props: menuProps }">
-          <v-btn class="flex-grow-1" v-bind="menuProps">
+          <v-btn
+            :aria-label="`${rom.name} admin menu`"
+            class="flex-grow-1"
+            v-bind="menuProps"
+          >
             <v-icon icon="mdi-dots-vertical" size="large" />
           </v-btn>
         </template>

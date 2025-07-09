@@ -1,21 +1,25 @@
 <script setup lang="ts">
 import InterfaceOption from "@/components/Settings/UserInterface/InterfaceOption.vue";
 import RSection from "@/components/common/RSection.vue";
+import collectionApi from "@/services/api/collection";
+import storeCollections from "@/stores/collections";
 import { computed, ref } from "vue";
+import { useDisplay } from "vuetify";
 import { isNull } from "lodash";
 import { useI18n } from "vue-i18n";
 
 // Props
 const { t } = useI18n();
+const { smAndDown } = useDisplay();
+const collectionsStore = storeCollections();
+
 // Initializing refs from localStorage
+// Home
 const storedShowRecentRoms = localStorage.getItem("settings.showRecentRoms");
 const showRecentRomsRef = ref(
   isNull(storedShowRecentRoms) ? true : storedShowRecentRoms === "true",
 );
-const storedGridRecentRoms = localStorage.getItem("settings.gridRecentRoms");
-const gridRecentRomsRef = ref(
-  isNull(storedGridRecentRoms) ? false : storedGridRecentRoms === "true",
-);
+
 const storedShowContinuePlaying = localStorage.getItem(
   "settings.showContinuePlaying",
 );
@@ -24,31 +28,44 @@ const showContinuePlayingRef = ref(
     ? true
     : storedShowContinuePlaying === "true",
 );
-const storedGridContinuePlaying = localStorage.getItem(
-  "settings.gridContinuePlaying",
-);
-const gridContinuePlayingRef = ref(
-  isNull(storedGridContinuePlaying)
-    ? false
-    : storedGridContinuePlaying === "true",
-);
 const storedShowPlatforms = localStorage.getItem("settings.showPlatforms");
 const showPlatformsRef = ref(
   isNull(storedShowPlatforms) ? true : storedShowPlatforms === "true",
-);
-const storedGridPlatforms = localStorage.getItem("settings.gridPlatforms");
-const gridPlatformsRef = ref(
-  isNull(storedGridPlatforms) ? true : storedGridPlatforms === "true",
 );
 const storedShowCollections = localStorage.getItem("settings.showCollections");
 const showCollectionsRef = ref(
   isNull(storedShowCollections) ? true : storedShowCollections === "true",
 );
-const storedGridCollections = localStorage.getItem("settings.gridCollections");
-const gridCollectionsRef = ref(
-  isNull(storedGridCollections) ? true : storedGridCollections === "true",
+
+// Virtual collections
+const storedShowVirtualCollections = localStorage.getItem(
+  "settings.showVirtualCollections",
+);
+const showVirtualCollectionsRef = ref(
+  isNull(storedShowVirtualCollections)
+    ? true
+    : storedShowVirtualCollections === "true",
+);
+const storedVirtualCollectionType = localStorage.getItem(
+  "settings.virtualCollectionType",
+);
+const virtualCollectionTypeRef = ref(
+  isNull(storedVirtualCollectionType)
+    ? "collection"
+    : storedVirtualCollectionType,
 );
 
+// Platforms drawer
+const storedPlatformsGroupBy = localStorage.getItem(
+  "settings.platformsGroupBy",
+);
+const platformsGroupByRef = ref(
+  isNull(storedPlatformsGroupBy) || storedPlatformsGroupBy === "null"
+    ? null
+    : storedPlatformsGroupBy,
+);
+
+// Gallery
 const storedGroupRoms = localStorage.getItem("settings.groupRoms");
 const groupRomsRef = ref(
   isNull(storedGroupRoms) ? true : storedGroupRoms === "true",
@@ -66,6 +83,15 @@ const languagesRef = ref(
 const storedStatus = localStorage.getItem("settings.showStatus");
 const statusRef = ref(isNull(storedStatus) ? true : storedStatus === "true");
 
+const storedActionBar = localStorage.getItem("settings.showActionBar");
+const actionBarRef = ref(
+  isNull(storedActionBar) ? false : storedActionBar === "true",
+);
+const stored3DEffect = localStorage.getItem("settings.enable3DEffect");
+const enable3DEffectRef = ref(
+  isNull(stored3DEffect) ? false : stored3DEffect === "true",
+);
+
 const homeOptions = computed(() => [
   {
     title: t("settings.show-recently-added"),
@@ -76,30 +102,12 @@ const homeOptions = computed(() => [
     modelTrigger: toggleShowRecentRoms,
   },
   {
-    title: t("settings.recently-added-as-grid"),
-    description: t("settings.recently-added-as-grid-desc"),
-    iconEnabled: "mdi-view-comfy",
-    iconDisabled: "mdi-view-column",
-    disabled: !showRecentRomsRef.value,
-    model: gridRecentRomsRef,
-    modelTrigger: toggleGridRecentRoms,
-  },
-  {
     title: t("settings.show-continue-playing"),
     description: t("settings.show-continue-playing-desc"),
     iconEnabled: "mdi-play",
     iconDisabled: "mdi-play",
     model: showContinuePlayingRef,
     modelTrigger: toggleShowContinuePlaying,
-  },
-  {
-    title: t("settings.continue-playing-as-grid"),
-    description: t("settings.continue-playing-as-grid-desc"),
-    iconEnabled: "mdi-view-comfy",
-    iconDisabled: "mdi-view-column",
-    disabled: !showContinuePlayingRef.value,
-    model: gridContinuePlayingRef,
-    modelTrigger: toggleGridContinuePlaying,
   },
   {
     title: t("settings.show-platforms"),
@@ -110,15 +118,6 @@ const homeOptions = computed(() => [
     modelTrigger: toggleShowPlatforms,
   },
   {
-    title: t("settings.show-platforms-as-grid"),
-    description: t("settings.show-platforms-as-grid-desc"),
-    iconEnabled: "mdi-view-comfy",
-    iconDisabled: "mdi-view-column",
-    disabled: !showPlatformsRef.value,
-    model: gridPlatformsRef,
-    modelTrigger: toggleGridPlatforms,
-  },
-  {
     title: t("settings.show-collections"),
     description: t("settings.show-collections-desc"),
     iconEnabled: "mdi-bookmark-box-multiple",
@@ -126,14 +125,16 @@ const homeOptions = computed(() => [
     model: showCollectionsRef,
     modelTrigger: toggleShowCollections,
   },
+]);
+
+const platformsDrawerOptions = computed(() => [
   {
-    title: t("settings.show-collections-as-grid"),
-    description: t("settings.show-collections-as-grid-desc"),
-    iconEnabled: "mdi-view-comfy",
-    iconDisabled: "mdi-view-column",
-    disabled: !showCollectionsRef.value,
-    model: gridCollectionsRef,
-    modelTrigger: toggleGridCollections,
+    title: t("settings.group-platforms-by"),
+    description: t("settings.group-platforms-by-desc"),
+    iconEnabled: "mdi-controller",
+    iconDisabled: "mdi-controller",
+    model: platformsGroupByRef,
+    modelTrigger: setPlatformDrawerGroupBy,
   },
 ]);
 
@@ -152,7 +153,7 @@ const galleryOptions = computed(() => [
     iconEnabled: "mdi-account-group-outline",
     iconDisabled: "mdi-account-outline",
     model: siblingsRef,
-    disabled: !groupRomsRef.value,
+    disabled: !groupRomsRef,
     modelTrigger: toggleSiblings,
   },
   {
@@ -179,40 +180,59 @@ const galleryOptions = computed(() => [
     model: statusRef,
     modelTrigger: toggleStatus,
   },
+  {
+    title: t("settings.show-actionbar"),
+    description: t("settings.show-actionbar-desc"),
+    iconEnabled: "mdi-card",
+    iconDisabled: "mdi-card-outline",
+    model: actionBarRef,
+    modelTrigger: toggleActionBar,
+  },
+  {
+    title: t("settings.enable-3d-effect"),
+    description: t("settings.enable-3d-effect-desc"),
+    iconEnabled: "mdi-cube",
+    iconDisabled: "mdi-cube-outline",
+    model: enable3DEffectRef,
+    modelTrigger: toggle3DEffect,
+  },
 ]);
 
 // Functions to update localStorage
-const toggleShowRecentRoms = (value: boolean) => {
-  showRecentRomsRef.value = value;
-  localStorage.setItem("settings.showRecentRoms", value.toString());
-};
-const toggleGridRecentRoms = (value: boolean) => {
-  gridRecentRomsRef.value = value;
-  localStorage.setItem("settings.gridRecentRoms", value.toString());
+const setPlatformDrawerGroupBy = (value: string) => {
+  platformsGroupByRef.value = value;
+  localStorage.setItem("settings.platformsGroupBy", value);
 };
 const toggleShowContinuePlaying = (value: boolean) => {
   showContinuePlayingRef.value = value;
   localStorage.setItem("settings.showContinuePlaying", value.toString());
 };
-const toggleGridContinuePlaying = (value: boolean) => {
-  gridContinuePlayingRef.value = value;
-  localStorage.setItem("settings.gridContinuePlaying", value.toString());
-};
 const toggleShowPlatforms = (value: boolean) => {
   showPlatformsRef.value = value;
   localStorage.setItem("settings.showPlatforms", value.toString());
-};
-const toggleGridPlatforms = (value: boolean) => {
-  gridPlatformsRef.value = value;
-  localStorage.setItem("settings.gridPlatforms", value.toString());
 };
 const toggleShowCollections = (value: boolean) => {
   showCollectionsRef.value = value;
   localStorage.setItem("settings.showCollections", value.toString());
 };
-const toggleGridCollections = (value: boolean) => {
-  gridCollectionsRef.value = value;
-  localStorage.setItem("settings.gridCollections", value.toString());
+const toggleShowVirtualCollections = (value: boolean) => {
+  showVirtualCollectionsRef.value = value;
+  localStorage.setItem("settings.showVirtualCollections", value.toString());
+};
+const setVirtualCollectionType = async (value: string) => {
+  virtualCollectionTypeRef.value = value;
+  localStorage.setItem("settings.virtualCollectionType", value);
+
+  await collectionApi
+    .getVirtualCollections({ type: value })
+    .then(({ data: virtualCollections }) => {
+      collectionsStore.setVirtual(virtualCollections);
+    });
+};
+
+const toggleShowRecentRoms = (value: boolean) => {
+  showRecentRomsRef.value = value;
+  localStorage.setItem("settings.showRecentRoms", value.toString());
 };
 
 const toggleGroupRoms = (value: boolean) => {
@@ -239,14 +259,27 @@ const toggleStatus = (value: boolean) => {
   statusRef.value = value;
   localStorage.setItem("settings.showStatus", value.toString());
 };
+
+const toggleActionBar = (value: boolean) => {
+  actionBarRef.value = value;
+  localStorage.setItem("settings.showActionBar", value.toString());
+};
+const toggle3DEffect = (value: boolean) => {
+  enable3DEffectRef.value = value;
+  localStorage.setItem("settings.enable3DEffect", value.toString());
+};
 </script>
 <template>
-  <r-section icon="mdi-palette-swatch-outline" :title="t('settings.interface')">
+  <r-section
+    icon="mdi-palette-swatch-outline"
+    :title="t('settings.interface')"
+    class="ma-2"
+  >
     <template #content>
-      <v-chip label variant="text" prepend-icon="mdi-home" class="ml-2">{{
+      <v-chip label variant="text" prepend-icon="mdi-home" class="ml-2 mt-1">{{
         t("settings.home")
       }}</v-chip>
-      <v-divider class="border-opacity-25 mx-2" />
+      <v-divider class="border-opacity-25 ma-1" />
       <v-row class="py-1" no-gutters>
         <v-col
           cols="12"
@@ -255,7 +288,64 @@ const toggleStatus = (value: boolean) => {
           :key="option.title"
         >
           <interface-option
-            class="mx-2"
+            class="ma-1"
+            :title="option.title"
+            :description="option.description"
+            :icon="
+              option.model.value ? option.iconEnabled : option.iconDisabled
+            "
+            v-model="option.model.value"
+            @update:model-value="option.modelTrigger"
+          />
+        </v-col>
+      </v-row>
+      <v-chip
+        label
+        variant="text"
+        prepend-icon="mdi-controller"
+        class="ml-2 mt-4"
+        >{{ t("settings.platforms-drawer") }}</v-chip
+      >
+      <v-divider class="border-opacity-25 ma-1" />
+      <v-row class="align-center py-1" no-gutters>
+        <v-col
+          cols="12"
+          v-for="option in platformsDrawerOptions"
+          :key="option.title"
+        >
+          <v-select
+            v-model="platformsGroupByRef"
+            :items="[
+              { title: 'Manufacturer', value: 'family_name' },
+              { title: 'Generation', value: 'generation' },
+              { title: 'Type', value: 'category' },
+              { title: 'None', value: null },
+            ]"
+            :label="t('settings.platforms-drawer-group-by')"
+            class="mx-2 mt-2"
+            variant="outlined"
+            hide-details
+            @update:model-value="setPlatformDrawerGroupBy"
+          />
+        </v-col>
+      </v-row>
+      <v-chip
+        label
+        variant="text"
+        prepend-icon="mdi-view-grid"
+        class="ml-2 mt-4"
+        >{{ t("settings.gallery") }}</v-chip
+      >
+      <v-divider class="border-opacity-25 ma-1" />
+      <v-row class="py-1" no-gutters>
+        <v-col
+          cols="12"
+          md="6"
+          v-for="option in galleryOptions"
+          :key="option.title"
+        >
+          <interface-option
+            class="ma-1"
             :disabled="option.disabled"
             :title="option.title"
             :description="option.description"
@@ -272,26 +362,42 @@ const toggleStatus = (value: boolean) => {
         variant="text"
         prepend-icon="mdi-view-grid"
         class="ml-2 mt-4"
-        >{{ t("settings.gallery") }}</v-chip
+        >{{ t("common.virtual-collections") }}</v-chip
       >
-      <v-divider class="border-opacity-25 mx-2" />
-      <v-row class="py-1" no-gutters>
-        <v-col
-          cols="12"
-          md="6"
-          v-for="option in galleryOptions"
-          :key="option.title"
-        >
+      <v-divider class="border-opacity-25 mx-2 mb-2" />
+      <v-row class="py-1 align-center" no-gutters>
+        <v-col cols="12" md="6">
           <interface-option
             class="mx-2"
-            :disabled="option.disabled"
-            :title="option.title"
-            :description="option.description"
+            :title="t('settings.show-virtual-collections')"
+            :description="t('settings.show-virtual-collections-desc')"
             :icon="
-              option.model.value ? option.iconEnabled : option.iconDisabled
+              showVirtualCollectionsRef
+                ? 'mdi-bookmark-box-multiple'
+                : 'mdi-bookmark-box-multiple'
             "
-            v-model="option.model.value"
-            @update:model-value="option.modelTrigger"
+            v-model="showVirtualCollectionsRef"
+            @update:model-value="toggleShowVirtualCollections"
+          />
+        </v-col>
+        <v-col cols="12" md="6">
+          <v-select
+            v-model="virtualCollectionTypeRef"
+            :items="[
+              { title: 'IGDB Collection', value: 'collection' },
+              { title: 'Franchise', value: 'franchise' },
+              { title: 'Genre', value: 'genre' },
+              { title: 'Play Mode', value: 'mode' },
+              { title: 'Developer', value: 'company' },
+              { title: 'All (slow)', value: 'all' },
+            ]"
+            :label="t('settings.virtual-collection-type')"
+            class="mx-2"
+            :class="{ 'mt-4': smAndDown }"
+            variant="outlined"
+            hide-details
+            :disabled="!showVirtualCollectionsRef"
+            @update:model-value="setVirtualCollectionType"
           />
         </v-col>
       </v-row>

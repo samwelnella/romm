@@ -33,14 +33,16 @@ function closeDialog() {
     @timeout="closeDialog"
     absolute
     :location="xs ? 'top' : 'top right'"
-    color="tooltip"
+    color="primary-darken"
   >
-    <v-icon
-      :icon="snackbarStatus.icon"
-      :color="snackbarStatus.color"
-      class="mx-2"
-    />
-    {{ snackbarStatus.msg }}
+    <template #text>
+      <v-row class="d-flex align-start flex-row flex-nowrap px-2">
+        <v-icon :icon="snackbarStatus.icon" class="mx-2 mt-1" />
+        <span class="text-subtitle-1 font-weight-regular">
+          {{ snackbarStatus.msg }}
+        </span>
+      </v-row>
+    </template>
     <template #actions>
       <v-btn variant="text" @click="closeDialog">
         <v-icon icon="mdi-close" />

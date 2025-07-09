@@ -12,9 +12,9 @@
 #   - dev-full: Full image with emulator stage and development dependencies
 
 # Versions:
-ARG ALPINE_VERSION=3.20
-ARG NGINX_VERSION=1.27.1
-ARG NODE_VERSION=20.16
+ARG ALPINE_VERSION=3.22
+ARG NGINX_VERSION=1.27.5
+ARG NODE_VERSION=20.19
 ARG PYTHON_VERSION=3.12
 
 
@@ -58,24 +58,27 @@ FROM backend-build AS backend-dev-build
 RUN poetry install --no-ansi --no-cache --all-extras
 
 
-# TODO: Upgrade Alpine to the same version as the other stages, when RAHasher is updated to work
-#       with it (seems like Alpine 3.18's g++ v12 is the latest version that works with RAHasher,
-#       while g++ v13 fails to compile it).
-FROM alpine:3.18 AS rahasher-build
+FROM alpine:${ALPINE_VERSION} AS rahasher-build
 
 RUN apk add --no-cache \
     g++ \
     git \
-    linux-headers \
-    make \
-    zlib-dev
+    make
 
-ARG RALIBRETRO_VERSION=1.8.0
-
-# TODO: Remove `sed` command when RAHasher can be compiled without it.
-RUN git clone --recursive --branch "${RALIBRETRO_VERSION}" --depth 1 https://github.com/RetroAchievements/RALibretro.git && \
+# TODO: Move to a tagged release of `RALibretro`, once a version newer than 1.8.0 is released.
+ARG RALIBRETRO_SHA=304ed205f11dd0bb22c01afe11d1ffabf176facc
+# TODO: Remove `sed` command adding "ctime", when RAHasher can be compiled without it.
+# TODO: Remove `sed` command adding "unistd.h", when RAHasher can be compiled without it.
+#       Related pull request: https://github.com/madler/zlib/pull/1022
+RUN git clone --recursive https://github.com/RetroAchievements/RALibretro.git && \
     cd ./RALibretro && \
+    git checkout "${RALIBRETRO_SHA}" && \
+    git submodule update --init --recursive && \
     sed -i '22a #include <ctime>' ./src/Util.h && \
+    sed -i '6a #include <unistd.h>' \
+      ./src/libchdr/deps/zlib-1.3.1/gzlib.c \
+      ./src/libchdr/deps/zlib-1.3.1/gzread.c \
+      ./src/libchdr/deps/zlib-1.3.1/gzwrite.c && \
     make HAVE_CHD=1 -f ./Makefile.RAHasher
 
 
@@ -126,7 +129,8 @@ RUN git clone https://github.com/evanmiller/mod_zip.git && \
     chmod 644 ./objs/ngx_http_zip_module.so
 
 
-FROM nginx:${NGINX_VERSION}-alpine${ALPINE_VERSION} AS production-stage
+# TODO: Upgrade Alpine to the same version as the other stages, when a new nginx image is released.
+FROM nginx:${NGINX_VERSION}-alpine3.21 AS production-stage
 ARG WEBSERVER_FOLDER=/var/www/html
 
 # Install required packages and dependencies
@@ -144,27 +148,28 @@ COPY --from=rahasher-build /RALibretro/bin64/RAHasher /usr/bin/RAHasher
 COPY --from=nginx-build ./nginx/objs/ngx_http_zip_module.so /usr/lib/nginx/modules/
 COPY --from=frontend-build /front/dist ${WEBSERVER_FOLDER}
 
-COPY ./frontend/assets/dashboard-icons ${WEBSERVER_FOLDER}/assets/dashboard-icons
-COPY ./frontend/assets/default ${WEBSERVER_FOLDER}/assets/default
-COPY ./frontend/assets/platforms ${WEBSERVER_FOLDER}/assets/platforms
-COPY ./frontend/assets/scrappers ${WEBSERVER_FOLDER}/assets/scrappers
-COPY ./frontend/assets/webrcade/feed ${WEBSERVER_FOLDER}/assets/webrcade/feed
-COPY ./frontend/assets/emulatorjs ${WEBSERVER_FOLDER}/assets/emulatorjs
-COPY ./frontend/assets/ruffle ${WEBSERVER_FOLDER}/assets/ruffle
+COPY ./frontend/assets ${WEBSERVER_FOLDER}/assets
 RUN mkdir -p ${WEBSERVER_FOLDER}/assets/romm && \
-    ln -s /romm/resources ${WEBSERVER_FOLDER}/assets/romm/resources && \
-    ln -s /romm/assets ${WEBSERVER_FOLDER}/assets/romm/assets
+    ln -sf /romm/resources ${WEBSERVER_FOLDER}/assets/romm/resources && \
+    ln -sf /romm/assets ${WEBSERVER_FOLDER}/assets/romm/assets
 
 COPY ./backend /backend
 
 # Setup init script and config files
 COPY ./docker/init_scripts/* /
 COPY ./docker/nginx/js/ /etc/nginx/js/
+COPY ./docker/nginx/templates/ /etc/nginx/templates/
 COPY ./docker/nginx/default.conf /etc/nginx/nginx.conf
+COPY ./docker/gunicorn/logging.conf /etc/gunicorn/logging.conf
 
 # User permissions
+# - Create default user `romm` (1000) and group `romm` (1000).
+# - Create base directories and make default user/group the owner.
+# - Make nginx configuration files writable by everyone, for `envsubst` to work
+#     when a custom UID/GID is used.
 RUN addgroup -g 1000 -S romm && adduser -u 1000 -D -S -G romm romm && \
-    mkdir /romm /redis-data && chown romm:romm /romm /redis-data
+    mkdir /romm /redis-data && chown romm:romm /romm /redis-data && \
+    chmod -R a+w /etc/nginx/conf.d
 
 
 FROM scratch AS slim-image

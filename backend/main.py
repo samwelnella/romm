@@ -1,3 +1,4 @@
+import logging.config
 import re
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -34,18 +35,28 @@ from endpoints import (
 )
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_pagination import add_pagination
 from handler.auth.constants import ALGORITHM
 from handler.auth.hybrid_auth import HybridAuthBackend
 from handler.auth.middleware import CustomCSRFMiddleware, SessionMiddleware
 from handler.socket_handler import socket_handler
+from logger.log_middleware import LOGGING_CONFIG, CustomLoggingMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 from utils import get_version
-from utils.context import ctx_httpx_client, initialize_context, set_context_middleware
+from utils.context import (
+    ctx_aiohttp_session,
+    ctx_httpx_client,
+    initialize_context,
+    set_context_middleware,
+)
+
+logging.config.dictConfig(LOGGING_CONFIG)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with initialize_context():
+        app.state.aiohttp_session = ctx_aiohttp_session.get()
         app.state.httpx_client = ctx_httpx_client.get()
         yield
 
@@ -118,10 +129,13 @@ app.include_router(collections.router, prefix="/api")
 
 app.mount("/ws", socket_handler.socket_app)
 
+add_pagination(app)
+
 
 if __name__ == "__main__":
     # Run migrations
     alembic.config.main(argv=["upgrade", "head"])
 
     # Run application
-    uvicorn.run("main:app", host=DEV_HOST, port=DEV_PORT, reload=True)
+    app.add_middleware(CustomLoggingMiddleware)
+    uvicorn.run("main:app", host=DEV_HOST, port=DEV_PORT, reload=True, access_log=False)

@@ -1,26 +1,42 @@
 <script setup lang="ts">
 import PlatformIcon from "@/components/common/Platform/Icon.vue";
+import { ROUTES } from "@/plugins/router";
 import type { Platform } from "@/stores/platforms";
 
 // Props
-withDefaults(defineProps<{ platform: Platform; rail?: boolean }>(), {
-  rail: false,
-});
+withDefaults(
+  defineProps<{
+    platform: Platform;
+    withLink?: boolean;
+    showRomCount?: boolean;
+  }>(),
+  {
+    withLink: false,
+    showRomCount: true,
+  },
+);
 </script>
 
 <template>
   <v-list-item
-    :key="platform.slug"
-    :to="{ name: 'platform', params: { platform: platform.id } }"
+    v-bind="{
+      ...(withLink
+        ? {
+            to: { name: ROUTES.PLATFORM, params: { platform: platform.id } },
+          }
+        : {}),
+    }"
     :value="platform.slug"
-    class="py-0"
+    rounded
+    density="compact"
+    class="my-1 py-2"
   >
     <template #prepend>
       <platform-icon
-        :key="platform.slug"
         :slug="platform.slug"
         :name="platform.name"
-        :size="50"
+        :fs-slug="platform.fs_slug"
+        :size="40"
       >
         <v-tooltip
           location="bottom"
@@ -30,7 +46,7 @@ withDefaults(defineProps<{ platform: Platform; rail?: boolean }>(), {
           open-delay="500"
           ><template #activator="{ props }">
             <div
-              v-if="!platform.igdb_id && !platform.moby_id"
+              v-if="!platform.igdb_id && !platform.moby_id && !platform.ss_id"
               v-bind="props"
               class="not-found-icon"
             >
@@ -50,7 +66,7 @@ withDefaults(defineProps<{ platform: Platform; rail?: boolean }>(), {
         <span class="text-caption text-grey">{{ platform.fs_slug }}</span>
       </v-col>
     </v-row>
-    <template #append>
+    <template v-if="showRomCount" #append>
       <v-chip class="ml-2" size="x-small" label>
         {{ platform.rom_count }}
       </v-chip>

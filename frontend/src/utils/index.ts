@@ -1,7 +1,11 @@
 import cronstrue from "cronstrue";
 import type { SimpleRom } from "@/stores/roms";
 import type { Heartbeat } from "@/stores/heartbeat";
-import type { RomFile, RomUserStatus } from "@/__generated__";
+import type { RomFileSchema, RomUserStatus } from "@/__generated__";
+import { computed } from "vue";
+import { useDisplay } from "vuetify";
+import { storeToRefs } from "pinia";
+import storeNavigation from "@/stores/navigation";
 
 /**
  * Views configuration object.
@@ -48,9 +52,28 @@ export const views: Record<
 };
 
 /**
+ * Get icon associated to role.
+ *
+ * @param role The role as string.
+ * @returns The mdi icon string.
+ */
+export function getRoleIcon(role: string) {
+  switch (role) {
+    case "admin":
+      return "mdi-shield-crown-outline";
+    case "editor":
+      return "mdi-file-edit-outline";
+    case "viewer":
+      return "mdi-book-open-variant-outline";
+    default:
+      return "mdi-account";
+  }
+}
+
+/**
  * Default path for user avatars.
  */
-export const defaultAvatarPath = "/assets/default/user.png";
+export const defaultAvatarPath = "/assets/default/user.svg";
 
 /**
  * Normalize a string by converting it to lowercase and removing diacritics.
@@ -88,28 +111,28 @@ export function convertCronExperssion(expression: string) {
  */
 export function getDownloadPath({
   rom,
-  files = [],
+  fileIDs = [],
 }: {
   rom: SimpleRom;
-  files?: string[];
+  fileIDs?: number[];
 }) {
   const queryParams = new URLSearchParams();
-  if (files.length) {
-    files.forEach((file) => queryParams.append("files", file));
+  if (fileIDs.length > 0) {
+    queryParams.append("file_ids", fileIDs.join(","));
   }
-  return `/api/roms/${rom.id}/content/${
-    rom.file_name
-  }?${queryParams.toString()}`;
+  return `/api/roms/${rom.id}/content/${rom.fs_name}?${queryParams.toString()}`;
 }
 
 export function getDownloadLink({
   rom,
-  files = [],
+  fileIDs = [],
 }: {
   rom: SimpleRom;
-  files?: string[];
+  fileIDs?: number[];
 }) {
-  return `${window.location.origin}${encodeURI(getDownloadPath({ rom, files }))}`;
+  return `${window.location.origin}${encodeURI(
+    getDownloadPath({ rom, fileIDs }),
+  )}`;
 }
 
 /**
@@ -314,6 +337,7 @@ export function languageToEmoji(language: string) {
  */
 const _EJS_CORES_MAP = {
   "3do": ["opera"],
+  acpc: ["cap32", "crocods"],
   amiga: ["puae"],
   "amiga-cd32": ["puae"],
   arcade: [
@@ -336,6 +360,7 @@ const _EJS_CORES_MAP = {
   c128: ["vice_x128"],
   "commmodore-128": ["vice_x128"],
   colecovision: ["gearcoleco"],
+  doom: ["prboom"],
   jaguar: ["virtualjaguar"],
   lynx: ["handy"],
   "atari-lynx-mkii": ["handy"],
@@ -390,6 +415,7 @@ const _EJS_CORES_MAP = {
   wonderswan: ["mednafen_wswan"],
   swancrystal: ["mednafen_wswan"],
   "wonderswan-color": ["mednafen_wswan"],
+  "zx-spectrum": ["fuse"],
 } as const;
 
 export type EJSPlatformSlug = keyof typeof _EJS_CORES_MAP;
@@ -419,6 +445,10 @@ export function areThreadsRequiredForEJSCore(core: string): boolean {
   return ["ppsspp"].includes(core);
 }
 
+const canvas = document.createElement("canvas");
+const gl =
+  canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
 /**
  * Check if EJS emulation is supported for a given platform.
  *
@@ -430,10 +460,6 @@ export function isEJSEmulationSupported(
   platformSlug: string,
   heartbeat: Heartbeat,
 ) {
-  const canvas = document.createElement("canvas");
-  const gl =
-    canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-
   return (
     !heartbeat.EMULATION.DISABLE_EMULATOR_JS &&
     getSupportedEJSCores(platformSlug).length > 0 &&
@@ -565,17 +591,18 @@ export function getTextForStatus(status: PlayingStatus) {
  * @param text The text to convert.
  * @returns The corresponding status key.
  */
-export function getStatusKeyForText(text: string) {
+export function getStatusKeyForText(text: string | null) {
+  if (!text) return null;
   return inverseRomStatusMap[text];
 }
 
 export function is3DSCIAFile(rom: SimpleRom): boolean {
-  return rom.file_extension.toLowerCase() == "cia";
+  return rom.fs_extension.toLowerCase() == "cia";
 }
 
-export function get3DSCIAFiles(rom: SimpleRom): RomFile[] {
+export function get3DSCIAFiles(rom: SimpleRom): RomFileSchema[] {
   return rom.files.filter((file) =>
-    file.filename.toLowerCase().endsWith(".cia"),
+    file.file_name.toLowerCase().endsWith(".cia"),
   );
 }
 
@@ -591,4 +618,19 @@ export function is3DSCIARom(rom: SimpleRom): boolean {
   const hasValidFile = get3DSCIAFiles(rom).length > 0;
 
   return hasValidExtension || hasValidFile;
+}
+
+export function calculateMainLayoutWidth() {
+  const { smAndDown } = useDisplay();
+  const navigationStore = storeNavigation();
+  const { mainBarCollapsed } = storeToRefs(navigationStore);
+  const calculatedWidth = computed(() => {
+    return smAndDown.value
+      ? "calc(100% - 16px) !important"
+      : mainBarCollapsed.value
+        ? "calc(100% - 76px) !important"
+        : "calc(100% - 116px) !important";
+  });
+
+  return { calculatedWidth };
 }

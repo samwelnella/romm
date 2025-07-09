@@ -12,7 +12,10 @@ from config.config_manager import config_manager as cm
 from endpoints.sockets.scan import scan_platforms
 from handler.database import db_platform_handler
 from handler.scan_handler import ScanType
+from logger.formatter import CYAN
+from logger.formatter import highlight as hl
 from logger.logger import log
+from rq.job import Job
 from tasks.tasks import tasks_scheduler
 from utils import get_version
 from watchdog.events import FileSystemEventHandler
@@ -20,7 +23,7 @@ from watchdog.observers import Observer
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
-    release="romm@" + get_version(),
+    release=f"romm@{get_version()}",
 )
 
 path = (
@@ -58,17 +61,18 @@ class EventHandler(FileSystemEventHandler):
 
         # Skip if a scan is already scheduled
         for job in tasks_scheduler.get_jobs():
-            if job.func_name == "endpoints.sockets.scan.scan_platforms":
-                if job.args[0] == []:
-                    log.info("Full rescan already scheduled")
-                    return
+            if isinstance(job, Job):
+                if job.func_name == "endpoints.sockets.scan.scan_platforms":
+                    if job.args[0] == []:
+                        log.info("Full rescan already scheduled")
+                        return
 
-                if db_platform and db_platform.id in job.args[0]:
-                    log.info(f"Scan already scheduled for {fs_slug}")
-                    return
+                    if db_platform and db_platform.id in job.args[0]:
+                        log.info(f"Scan already scheduled for {hl(fs_slug)}")
+                        return
 
         time_delta = timedelta(minutes=RESCAN_ON_FILESYSTEM_CHANGE_DELAY)
-        rescan_in_msg = f"rescanning in {RESCAN_ON_FILESYSTEM_CHANGE_DELAY} minutes."
+        rescan_in_msg = f"rescanning in {hl(str(RESCAN_ON_FILESYSTEM_CHANGE_DELAY), color=CYAN)} minutes."
 
         # Any change to a platform directory should trigger a full rescan
         if event.is_directory and event_src.count("/") == 1:
@@ -76,13 +80,14 @@ class EventHandler(FileSystemEventHandler):
             tasks_scheduler.enqueue_in(time_delta, scan_platforms, [])
         elif db_platform:
             # Otherwise trigger a rescan for the specific platform
-            log.info(f"Change detected in {fs_slug} folder, {rescan_in_msg}")
-            return tasks_scheduler.enqueue_in(
+            log.info(f"Change detected in {hl(fs_slug)} folder, {rescan_in_msg}")
+            tasks_scheduler.enqueue_in(
                 time_delta,
                 scan_platforms,
                 [db_platform.id],
                 scan_type=ScanType.QUICK,
             )
+            return
 
 
 if __name__ == "__main__":
@@ -90,7 +95,7 @@ if __name__ == "__main__":
     observer.schedule(EventHandler(), path, recursive=True)
     observer.start()
 
-    log.info(f"Watching {path} for changes")
+    log.info(f"Watching {hl(path)} for changes")
 
     try:
         while observer.is_alive():

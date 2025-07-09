@@ -46,19 +46,22 @@ def platform():
 
 
 @pytest.fixture
-def rom(platform: Platform):
+def rom(admin_user: User, platform: Platform):
     rom = Rom(
         platform_id=platform.id,
         name="test_rom",
         slug="test_rom_slug",
-        file_name="test_rom.zip",
-        file_name_no_tags="test_rom",
-        file_name_no_ext="test_rom",
-        file_extension="zip",
-        file_path=f"{platform.slug}/roms",
-        file_size_bytes=1000.0,
+        fs_name="test_rom.zip",
+        fs_name_no_tags="test_rom",
+        fs_name_no_ext="test_rom",
+        fs_extension="zip",
+        fs_path=f"{platform.slug}/roms",
     )
-    return db_rom_handler.add_rom(rom)
+    rom = db_rom_handler.add_rom(rom)
+
+    db_rom_handler.add_rom_user(rom_id=rom.id, user_id=admin_user.id)
+
+    return rom
 
 
 @pytest.fixture

@@ -2,10 +2,13 @@ from endpoints.responses.stats import StatsReturn
 from handler.database import db_stats_handler
 from utils.router import APIRouter
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/stats",
+    tags=["stats"],
+)
 
 
-@router.get("/stats")
+@router.get("")
 def stats() -> StatsReturn:
     """Endpoint to return the current RomM stats
 
@@ -19,5 +22,5 @@ def stats() -> StatsReturn:
         "SAVES": db_stats_handler.get_saves_count(),
         "STATES": db_stats_handler.get_states_count(),
         "SCREENSHOTS": db_stats_handler.get_screenshots_count(),
-        "FILESIZE": db_stats_handler.get_total_filesize(),
+        "TOTAL_FILESIZE_BYTES": db_stats_handler.get_total_filesize(),
     }
